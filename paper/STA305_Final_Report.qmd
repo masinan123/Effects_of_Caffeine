@@ -1,0 +1,726 @@
+---
+title: "Analyzing the Effects of Caffeine on Cognitive Performance"
+author: 
+- Sinan Ma
+- Chengxin Li
+- Haoyu Wang
+- Kevin Luo
+- Zhekai Yu
+date: "`r Sys.Date()`"
+abstract: "Caffeine is a natural stimulant found in coffee, tea, and some other plants. It is commonly used to boost reaction time and attention performance. However people who consume caffeine more often may not experience the same level of improvement as those who rarely consume caffeine. This study is to analyze the relationship between caffeine intake levels and Cognitive performance. To analyze this effect, we design a controlled experiment by using *The Island*. We randomly select 90 participants and assign them into three caffeine intake levels. Participants would be asked to complete a 10 minutes attention test and minutes mental arithmetic task. The results show that higher caffeine intake may lead to better attention performance, but caffeine does not significantly improve or impair arithmetic ability. In the future study, we may consider more independent factors that may affect test results, such as genetic factors or habitual caffeine intake history."
+format: pdf
+toc: true
+thanks: "We would like to thank Anna Ly for her invaluable guidance throughout this project. The source code and data can be found on our [GitHub repository](https://github.com/masinan123/Effects_of_Caffeine.git)."
+number-sections: true
+execute:
+  echo: false  
+  warning: false
+  message: false
+---
+
+```{r load-libraries}
+# Loading the required R package
+library(here)
+library(tidyverse)
+library(performance)
+library(knitr)
+library(ggpubr)
+library(ggplot2)
+library(car)
+library(rstatix)
+```
+
+
+\newpage
+# Introduction
+
+Caffeine is one of the most widely used stimulants worldwide and is known for its potential to help people stay awake and affect various cognitive functions. While many people believe that moderate caffeine intake can improve mental sharpness and maintain concentration, the actual impact on different cognitive abilities remains controversial. 
+
+In this study, we examined the effects of three different levels of caffeine intake: decaffeinated (0 mg), regular (approximately 95 mg), and espresso (approximately 150 mg), on attention (measured by the number of missed letters) and mental arithmetic performance (quantified by test scores). We aim to study the following research questions:
+
+- (RQ1) What are the impacts of caffeine intake on attention test performance?
+  - Null hypothesis: caffeine intake has no association with attention test performance.
+  - Alternative hypothesis: caffeine intake is significantly correlated with improved attention test performance.
+
+
+- (RQ2) What are the impacts of caffeine intake on math (arithmetic) test score?
+  - Null hypothesis: caffeine intake has no association with math test performance.
+  - Alternative hypothesis: caffeine intake is significantly correlated with higher math test scores.
+
+The structure of the paper is as follows: @sec-methodology describes the data collection process, experimental design, and statistical methods employed in this analysis. @sec-analysis explores the dataset through summary statistics, visualization, and model assumptions. @sec-discussion provides interpretations of the results, discuss the findings from the data and addresses our research questions. @sec-limitations discusses potential challenges encountered during the study and suggests areas for improvement. Finally, @sec-conclusion summarizes the major insights and concludes our analysis.
+
+# Methodology {#sec-methodology}
+
+In the second-to-last week of February 2025, our group (Sinan, Chengxin, Haoyu, Kevin, and Zhekai) conducted a controlled experiment using the simulation platform *The Island* to investigate the effect of Caffeine Intake Level on attention performance and arithmetic ability. 
+
+In this experiment, We employed a between-subjects design using one-way ANOVA, where the experiment unit was an individual participant. The explanatory variable was *Caffeine Intake Level*, with three treatment groups: decaffeinated coffee (250 ml), which served as the control group; regular coffee (250 ml); and espresso (60 ml × 2). The response variables were *Attention Test Performance* and *Arithmetic Test Result*. Attention performance was measured by the number of missed letters in a 10-minute attention test, where a lower score indicated better performance. Arithmetic ability was assessed by the proportion of correct answers in a 4-minute mental arithmetic task, rounded to two decimal places.
+
+In the simulation platform *The Island*, 90 participants were evenly distributed into three groups (n = 30 per group) to ensure a balanced design. Group assignment was conducted manually within the simulated environment by drawing participants from different islands and allocating them evenly across treatment groups. 
+
+To ensure a controlled comparison, all participants are 30 to 40 years old, university degree holders, non-smokers, and had not consumed alcohol in the past 24 hours. Before the test, each participant completed a 30-minute nap. After the nap, participants consumed their assigned caffeinated beverage and then waited for a 15-minute caffeine absorption period to control the variability. After the pre-test routine, participants completed both cognitive tasks. All outcomes were recorded as numeric values and were suitable for statistical analysis. 
+
+We did not implement blocking in this experiment, as all participants were homogeneous in terms of age, education level, and lifestyle factors. While our group attempted to randomize the assignment of participants by selecting from different islands and houses within the simulation platform, the randomization process was not fully formalized. Visual elements such as house size, color, or layout may have unconsciously influenced our manual selection, introducing potential selection bias. Despite these limitations, group sizes remained balanced and efforts were made to distribute participants evenly across conditions. The implications of this partial randomization are further discussed in section @sec-limitations.
+
+# Analysis {#sec-analysis}
+
+## Summary Statistics
+This section presents the summary statistics for Attention Test Scores, Mental Arithmetic Test Scores, and Caffeine Treatment Groups. @tbl-summary-of-attention-test and @tbl-summary-arithmetic-test display the mean, median, standard deviation, interquartile range, confidence intervals, minimum, and maximum. @tbl-summary-treatment-groups shows the number of participants in each caffeine group.
+
+```{r load-data}
+# Reading the cleaned data
+data <- read.csv(here("data", "01-clean_data_in_num.csv"))
+```
+### Summary of Attention Test Scores
+
+```{r summary of attention test}
+#| label: tbl-summary-of-attention-test
+
+# Summarizing the attention test scores
+m1 = mean(data$num_of_missed_in_attention_test)
+m2 = median(data$num_of_missed_in_attention_test)
+m3 = sd(data$num_of_missed_in_attention_test)
+m4 = IQR(data$num_of_missed_in_attention_test)
+
+# Calculating a 95% confidence interval for mean
+ci1 <- t.test(data$num_of_missed_in_attention_test)$conf.int
+
+# Recording the minimum/maximum values
+min_1 <- min(data$num_of_missed_in_attention_test)
+max_1 <- max(data$num_of_missed_in_attention_test)
+
+# Creating a summary table
+attention_summary <- data.frame(Value = c(m1, m2, m3, m4, ci1[1], ci1[2], min_1, max_1))
+
+kable(
+  t(attention_summary),
+  col.names = c("Mean", "Median", "SD", "IQR", "CI Lower", "CI Upper", "Min", "Max"),
+  caption = "Summary of Attention Test Scores",
+  align = "c"
+)
+```
+The results indicate that the mean (8.1) is higher than the median (5), this suggests that the data is mostly concentrated on the right-side. This indicates the distribution is right-skewed. The interquartile range (IQR) of 9 is close to the standard deviation (9.38), indicating a wide spread of the data.
+
+### Summary of Mental Arithmetic Test Scores
+
+```{r summary arithmetic test}
+#| label: tbl-summary-arithmetic-test
+
+# Summarizing the mental arithmetic test scores
+m5 <- mean(data$difficult_arithmetic_test_score, na.rm = TRUE)
+m6 <- median(data$difficult_arithmetic_test_score, na.rm = TRUE)
+m7 <- sd(data$difficult_arithmetic_test_score, na.rm = TRUE)
+m8 <- IQR(data$difficult_arithmetic_test_score, na.rm = TRUE)
+
+# Calculating a 95% confidence interval for mean
+ci2 <- t.test(data$difficult_arithmetic_test_score, na.rm = TRUE)$conf.int
+
+# Recording the minimum/maximum values
+min_2 <- min(data$difficult_arithmetic_test_score, na.rm = TRUE)
+max_2 <- max(data$difficult_arithmetic_test_score, na.rm = TRUE)
+
+# Creating a summary table
+math_summary <- data.frame(Value = c(m5, m6, m7, m8, ci2[1], ci2[2], min_2, max_2))
+
+kable(
+  t(math_summary),
+  col.names = c("Mean", "Median", "SD", "IQR", "CI Lower", "CI Upper", "Min", "Max"),
+  caption = "Summary of Mental Arithmetic Test Scores",
+  align = "c",
+  booktabs = TRUE
+)
+```
+The mean (0.65) and median (0.68) for the Mental Arithmetic Test Scores are relatively close. The standard deviation (0.235) may indicates the variability is relatively low. We may examine the box plots for further information.
+
+### Summary of Caffeine Treatment Groups
+```{r summary treatment groups}
+#| label: tbl-summary-treatment-groups
+
+# Calculating the distribution of three caffeine intake groups
+treatment_counts <- table(data$caffeine_intake_level)
+treatment_percent <- prop.table(treatment_counts) * 100
+
+# Creating a summary table
+treatment_summary <- rbind(
+  Count = round(as.numeric(treatment_counts), 1),
+  Percentage = round(as.numeric(treatment_percent), 1)
+)
+colnames(treatment_summary) <- names(treatment_counts)
+
+kable(treatment_summary, 
+      col.names = c("Decaffeinated", "Regular", "Espresso x2" ),
+      caption = "Table 3: Summary of Participants in Each Treatment Group")
+```
+The table confirms that each caffeine intake group (Decaffeinated, Regular Coffee, and two shots of Espresso) contains 30 participants, ensuring a balanced design.
+
+## Visualization
+
+The following visualizations illustrate the distribution of test performance across caffeine treatment groups. @fig-attention-boxplot illustrates the distribution of missed letters in the attention test, while @fig-mental-boxplot visualizes performance on the mental arithmetic test. 
+
+### Boxplot for Attention Test Scores
+```{r attention-boxplot}
+#| label: fig-attention-boxplot
+#| fig-height: 2.5
+#| fig-width: 8
+#| fig-pos: "H"
+#| fig-cap: "Boxplot of Missed Letters in Attention Test by Caffeine Intake Level"
+# Creating a boxplot
+ggplot(data, aes(
+  x = as.factor(caffeine_intake_level),
+  y = num_of_missed_in_attention_test,
+  fill = as.factor(caffeine_intake_level)
+)) +
+  geom_boxplot() +
+  scale_x_discrete(labels = c(
+    "0" = "Decaffeinated", 
+    "1" = "Regular",
+    "2" = "Espresso"
+  )) +
+  scale_fill_discrete(
+    name = "Caffeine Level",  
+    labels = c(
+      "0" = "Decaffeinated", 
+      "1" = "Regular Coffee",
+      "2" = "Espresso"
+    )
+  ) +
+  labs(
+    x = "Caffeine Intake Level",
+    y = "Number of Missed Letters in Attention Test",
+    caption = "Boxplot of Missed Letters in Attention Test by Caffeine Intake Level"
+  ) +
+  theme_minimal()
+```
+As shown in @fig-attention-boxplot, the box plot above visualizes how caffeine intake affects the participants' concentration of awareness. The median of the number of missed letters decreases as caffeine intake increases. The participants within the decaffeinated group had overall, a higher number of missed letters in the attention test. Furthermore, one may observe that the variability decreases as caffeine intake increases, indicated by the length of the boxes. The overall vertical placement of the boxes confirms our analysis of the summary table for the attention test result above, the distribution of the results are indeed right-skewed.
+
+### Boxplot for Mental Arithmetic Test Scores
+
+```{r mental-boxplot}
+#| label: fig-mental-boxplot
+#| fig-height: 2.5
+#| fig-width: 8
+
+# Creating a box plot
+ggplot(data, aes(
+  x = as.factor(caffeine_intake_level),
+  y = difficult_arithmetic_test_score,
+  fill = as.factor(caffeine_intake_level)
+)) +
+  geom_boxplot() +
+  scale_x_discrete(labels = c(
+    "0" = "Decaffeinated", 
+    "1" = "Regular Coffee",
+    "2" = "Espresso"
+  )) +
+  scale_fill_discrete(
+    name = "Caffeine Level",  
+    labels = c(
+      "0" = "Decaffeinated", 
+      "1" = "Regular Coffee",
+      "2" = "Espresso"
+    )
+  ) +
+  labs(
+    x = "Caffeine Intake Level",
+    y = "Mental Arithmetic Test Score",
+    caption = "Boxplot of Mental Arithmetic Test Score by Caffeine Intake Level"
+  ) +
+  theme_minimal()
+```
+
+As shown in @fig-mental-boxplot, the box plot above visualizes how caffeine intake affects the participants' ability to perform mental arithmetic tests. There are no clear trends in how the median changes as caffeine intake increased, indicating that caffeine intake did not have a strong effect on mental arithmetic performance. Evidenced by the length of the boxes, the decaffeinated group had a slightly higher variability within their results. Overall, the spread of scores is not identical between the groups, yet there does not exist extreme outliers. These results show that the participants' mental arithmetic ability was not significantly influenced by caffeine intake.
+
+## Model Assumptions
+
+This section evaluates whether the assumptions required for ANOVA are satisfied for both the attention test and arithmetic test models. We use Q-Q plots (@fig-attention-qq and @fig-arithmetic-qq) and Shapiro-Wilk tests (@tbl-shapiro-attention and @tbl-shapiro-arithmetic) to assess normality of residuals. Bartlett tests (@tbl-bartlett-attention and @tbl-bartlett-arithmetic) are used to examine homogeneity of variances. When these assumptions are violated, Kruskal-Wallis tests (@tbl-kruskal-attention and @tbl-kruskal-arithmetic) are employed as non-parametric alternatives, followed by pairwise comparisons (@tbl-pairwise-attention) when necessary.
+
+```{r model-assumptions-check-attention-test-qq-plot}
+#| label: fig-attention-qq
+#| fig-height: 2.5
+#| fig-width: 8
+
+# Checking the Attention Test Model Assumptions
+# Ensure caffeine intake level is a factor
+data$caffeine_intake_level <- as.factor(data$caffeine_intake_level)
+
+# Fit the ANOVA model for attention test
+model_att <- lm(num_of_missed_in_attention_test ~ caffeine_intake_level, data = data)
+
+# QQ Plot for normality check
+ggqqplot(residuals(model_att), main = "QQ Plot - Attention Test")
+```
+
+As shown in @fig-attention-qq, the Q-Q plot helps assess the normality of residuals from the attention test model. Evidenced by the plot, the data points on the top right deviate significantly from the straight line, suggesting that the data is right-skewed and the normality assumption may not be satisfied.
+
+```{r model-assumptions-check-attention-test-shapiro}
+#| label: tbl-shapiro-attention
+# Run tests
+shapiro_test <- shapiro.test(residuals(model_att))
+
+# Create compact results display
+shapiro_results <- data.frame(
+  Statistic = formatC(shapiro_test$statistic, format = "f", digits = 3),
+  p.value = format.pval(shapiro_test$p.value, digits = 3)
+)
+knitr::kable(shapiro_results, align = 'c', caption = "Shapiro-Wilk Test")
+```
+
+
+```{r model-assumptions-check-attention-test-bartlett}
+#| label: tbl-bartlett-attention
+
+# Run tests
+bartlett_test <- bartlett.test(num_of_missed_in_attention_test ~ caffeine_intake_level, data = data)
+
+# Create compact results display
+bartlett_results <- data.frame(
+  Statistic = formatC(bartlett_test$statistic, format = "f", digits = 3),
+  p.value = format.pval(bartlett_test$p.value, digits = 3)
+)
+
+knitr::kable(bartlett_results, align = 'c', caption = "Bartlett Test")
+```
+
+
+As shown in @tbl-shapiro-attention, the Shapiro-Wilk test yields a p-value approximately equal to zero, leading us to reject the null hypothesis and conclude that the residuals do not follow a normal distribution. In addition, the Bartlett’s test result in @tbl-bartlett-attention gives a p-value of 0.0354. Since this is below the 0.05 significance level, we reject the null hypothesis and conclude that the variances across groups are not equal.
+
+```{r Kruskal-Wallis-test-attention-test}
+#| label: tbl-kruskal-attention
+#| tbl-cap: "Kruskal-Wallis Test for Attention Test Scores"
+
+# Convert caffeine intake level to words
+data$caffeine_intake_level <- factor(data$caffeine_intake_level, 
+                                     levels = c(0, 1, 2), 
+                                     labels = c("Decaffeinated", "Regular Coffee", "Espresso"))
+
+# Run Kruskal-Wallis test
+kw_test <- kruskal.test(num_of_missed_in_attention_test ~ caffeine_intake_level, data = data)
+
+# Format Kruskal-Wallis results
+kw_df <- data.frame(
+  ChiSq = formatC(kw_test$statistic, digits = 3, format = "f"),
+  df = kw_test$parameter,
+  p.value = format.pval(kw_test$p.value, digits = 3)
+)
+
+knitr::kable(kw_df)
+```
+
+Due to the tests conducted earlier in this report, the results of the attention test violate both the assumption of normality and the assumption of homogeneity of variance. Therefore, it is more appropriate to use a non-parametric method. As shown in @tbl-kruskal-attention, the Kruskal-Wallis test was performed to determine if there are significant differences among group means. The test provides a p-value of approximately 0.0055. At the 0.05 significance level, we reject the null hypothesis and conclude that significant differences exist between the groups, justifying the need for post-hoc testing.
+
+```{r pairwise-test-attention-test}
+#| label: tbl-pairwise-attention
+#| tbl-cap: "Pairwise Comparisons with Bonferroni Adjustment"
+
+# Run pairwise tests
+pairwise_results <- pairwise.t.test(data$num_of_missed_in_attention_test, 
+                                   data$caffeine_intake_level,
+                                   p.adjust.method = "bonferroni")
+
+# Format pairwise results
+pairwise_df <- as.data.frame(pairwise_results$p.value) |>
+  tibble::rownames_to_column("Group 1") |>
+  tidyr::pivot_longer(cols = -`Group 1`, 
+                      names_to = "Group 2", 
+                      values_to = "Adj. p-value") |>
+  dplyr::filter(!is.na(`Adj. p-value`)) |>
+  dplyr::mutate(`Adj. p-value` = format.pval(`Adj. p-value`, digits = 3))
+
+knitr::kable(pairwise_df)
+```
+
+As a follow-up to the Kruskal-Wallis test, we conducted pairwise t-tests with Bonferroni adjustment to correct for Type I error inflation. The results in @tbl-pairwise-attention show that the only statistically significant comparison is between the decaffeinated group and the espresso group, with an adjusted p-value of 0.02. All other comparisons resulted in p-values greater than 0.05. Therefore, we conclude that the significant difference lies specifically between these two groups.
+
+```{r model-assumptions-arithmetic-test-qq}
+#| label: fig-arithmetic-qq
+#| fig-height: 2.5
+#| fig-width: 8
+#| fig-pos: "H"
+#| fig-cap: "Q-Q Plot of Residuals from Mental Arithmetic Test Model"
+
+# Checking the Mental Arithmetic Model Assumptions
+# Ensure caffeine intake level is a factor
+data$caffeine_intake_level <- as.factor(data$caffeine_intake_level)
+
+# Fit the ANOVA model for arithmetic test
+model_math <- lm(difficult_arithmetic_test_score ~ caffeine_intake_level, data = data)
+
+# QQ Plot for normality check
+ggqqplot(residuals(model_math), main = "QQ Plot - Arithmetic Test")
+```
+
+The Q-Q plot in @fig-arithmetic-qq provides a visual assessment of normality for the residuals from the mental arithmetic test model. Data points on both the right and left ends deviate from the straight line, suggesting that the assumption of normality may not be satisfied. We will confirm this using the Shapiro-Wilk test below.
+
+```{r model-assumptions-arithmetic-test-shapiro}
+#| label: tbl-shapiro-arithmetic
+#| fig-pos: "H"
+#| tbl-cap: "Shapiro-Wilk Test for Normality (Arithmetic Test)"
+
+# Run Shapiro test to test normality
+shapiro_test <- shapiro.test(residuals(model_math))
+
+# Create compact results display
+shapiro_results <- data.frame(
+  Statistic = formatC(shapiro_test$statistic, format = "f", digits = 3),
+  p.value = format.pval(shapiro_test$p.value, digits = 3)
+)
+
+knitr::kable(shapiro_results, align = 'c')
+```
+
+The Shapiro-Wilk test provides a p-value of 0.00108. the null hypothesis is rejected using the significance level of 0.05, the conclusion that the normality assumption is not satisfied can be made.
+
+```{r model-assumptions-arithmetic-test-bartlett}
+#| label: tbl-bartlett-arithmetic
+#| tbl-cap: "Bartlett Test for Homogeneity of Variance (Arithmetic Test)"
+
+# Run Bartlett's test
+bartlett_test <- bartlett.test(difficult_arithmetic_test_score ~ caffeine_intake_level, data = data)
+
+# Create compact results display
+bartlett_results <- data.frame(
+  Statistic = formatC(bartlett_test$statistic, format = "f", digits = 3),
+  p.value = format.pval(bartlett_test$p.value, digits = 3)
+)
+
+knitr::kable(bartlett_results, align = 'c')
+```
+
+Bartlett’s test for homogeneity of variances provides a p-value of 0.631. The null hypothesis is failed to be rejected using a significance level of 0.05. The conclusion that there exists homogeneity of variances can be made.
+
+```{r Kruskal-Wallis-test-arithmetic-test}
+#| label: tbl-kruskal-arithmetic
+#| tbl-cap: "Kruskal-Wallis Test for Arithmetic Test Scores"
+
+# Run Kruskal-Wallis test to check if there are significant differences 
+kw_test <- kruskal.test(difficult_arithmetic_test_score ~ caffeine_intake_level, data = data)
+
+# Create display
+kw_df <- data.frame(
+  ChiSq = formatC(kw_test$statistic, digits = 3, format = "f"),
+  df = kw_test$parameter,
+  p.value = format.pval(kw_test$p.value, digits = 3)
+)
+
+knitr::kable(kw_df, align = 'c')
+```
+
+As shown in @tbl-kruskal-arithmetic, due to the tests conducted earlier in this report, the results of the mental arithmetic test violate the assumption of normality. Therefore, it would be more appropriate to perform the Kruskal-Wallis test to verify if there exists any significant differences within the means of each group.
+
+The results of the Kruskal-Wallis test provide a p-value of 0.8623, which is higher than the significance level of 0.05. It can be concluded that there does not exist any significant differences within the mean values of each group, and a follow-up post-hoc test is not necessary.
+
+# Discussion {#sec-discussion}
+
+The participants' results for both the attention test and the mental arithmetic test both violated the assumption of normality. Therefore, the Kruskal-Waliis test was deployed to verify if there existed any significant differences between the means of the results for each of the three groups of caffeine intake level. The test result for the mental arithmetic test indicates that caffeine intake level had no significant impact on the participants' ability to perform mental arithmetic. However, the Kruskal-Wallis test indicated that there did exist a significant difference between the means of the attention test for the three groups.
+
+Upon further verification using pairwise comparisons using t-tests and the bonferroni adjustment method, there was a significant difference between the mean values of the decaffeinated group and the espresso. However, both the comparison between the regular coffee and decaffeinated coffee groups and the comparison between the regular coffee and espresso groups was shown to be statistically insignificant.
+
+It can be concluded that only high levels on caffeine intake will induce a significant impact on a participant's attention levels. Furthermore, caffeine intake has no significant impact on the participant's ability to perform mental arithmetic.
+
+# Limitations {#sec-limitations}
+
+Our experiment used *The Island* tool to simulate 90 participants and assigned each person to one of three caffeine intake levels, with each group containing 30 participants. While we intended to randomize group assignment by manually selecting participants from different islands and houses, this process did not constitute formal randomization. Visual cues such as house size or color may have unintentionally influenced our selections, introducing potential allocation bias.
+
+In the attention test, participants in the Espresso group missed fewer letters on average, suggesting a possible relationship between caffeine intake and improved attention. However, this observed effect may be confounded by unmeasured variables such as sleep quality the night before or mental stress due to personal circumstances. We attempted to reduce such variability by enforcing a 30-minute nap for all participants prior to the test.
+
+Another limitation is that our cognitive tests were relatively short: a 10-minute attention task and a 4-minute mental arithmetic test. These simplified assessments may not fully capture the complexity of real-world tasks, which often require sustained attention and cognitive effort over longer periods. The ability to focus for 10 minutes does not necessarily indicate the capacity for long-term concentration in everyday settings.
+
+For the arithmetic test, we failed to reject the null hypothesis, suggesting no statistically significant relationship between caffeine intake and mental arithmetic performance in this context.
+
+In future studies, we recommend incorporating more rigorous randomization procedures (e.g., automated random assignment), implementing blocking strategies to control for additional variables, and applying double-blind procedures to minimize experimenter and participant bias. Additionally, designing tasks that more realistically reflect attention and arithmetic capabilities in real-life contexts would improve the ecological validity of the findings.
+
+# Conclusion {#sec-conclusion}
+
+In summary, we investigated the effects of caffeine on cognitive performance and came to two main conclusions. First, there were significant differences between the three caffeine groups in the attention test, but only the comparison between the decaffeinated and espresso conditions reached statistical significance. This suggests that consuming a higher dose of caffeine (espresso) can significantly reduce the number of letters missed, while consuming a moderate dose of caffeine (regular coffee) does not have a significant advantage, which may indicate a threshold effect or individual differences in caffeine metabolism.
+
+Second, regarding the mental arithmetic test, we found no significant differences between the three treatments. This result suggests that caffeine may not significantly alter more complex or computationally intensive tasks in our experimental design, or that any potential effect is too subtle to detect with the current sample size and measurement methods.
+
+Based on these findings, future research could explore a wider range of cognitive functions and refine the range of caffeine doses. One particularly useful approach would be a repeated measures design, in which each participant receives multiple caffeine conditions. This design controls for individual differences, such as varying levels of caffeine tolerance, by comparing each participant’s performance across treatment conditions. It allows for a more precise assessment of the direct effects of caffeine and helps clarify the relationship between dose and response.
+
+Overall, our findings highlight that caffeine can improve some types of attentional performance, but its effects on more complex reasoning tasks are uncertain or small. Therefore, researchers and consumers should consider specific cognitive goals, whether it is improving short-term alertness or solving complex problems, when deciding on the optimal dose or usage scenario for caffeine.
+
+
+\newpage
+
+# Appendix
+
+Loading Libraries 
+```{r appendix-load-libraries, echo=TRUE, eval = FALSE}
+# Loading the required R package
+library(tidyverse)
+library(performance)
+library(knitr)
+library(ggpubr)
+library(ggplot2)
+library(car)
+library(rstatix)
+```
+
+Loading Data
+```{r appendix-load-data, echo=TRUE, eval = FALSE}
+# Reading the cleaned data
+data <- read.csv("data/01-clean_data_in_num.csv")
+```
+
+Summary of Attention Test Scores
+```{r appendix-summary of attention test, echo=TRUE, eval = FALSE}
+# Summarizing the attention test scores
+m1 = mean(data$num_of_missed_in_attention_test)
+m2 = median(data$num_of_missed_in_attention_test)
+m3 = sd(data$num_of_missed_in_attention_test)
+m4 = IQR(data$num_of_missed_in_attention_test)
+
+# Calculating a 95% confidence interval for mean
+ci1 <- t.test(data$num_of_missed_in_attention_test)$conf.int
+
+# Recording the minimum/maximum values
+min_1 <- min(data$num_of_missed_in_attention_test)
+max_1 <- max(data$num_of_missed_in_attention_test)
+
+# Creating a summary table
+attention_summary <- data.frame(Value = c(m1, m2, m3, m4, ci1[1], ci1[2], 
+                                          min_1, max_1))
+
+kable(
+  t(attention_summary),
+  col.names = c("Mean", "Median", "SD", "IQR", "CI Lower", "CI Upper", 
+                "Min", "Max"),
+  caption = "Summary of Attention Test Scores",
+  align = "c"
+)
+```
+
+Summary of Mental Arithmetic Test Scores
+```{r appendix-summary-arithmetic-test, echo=TRUE, eval = FALSE}
+# Summarizing the mental arithmetic test scores
+m5 <- mean(data$difficult_arithmetic_test_score, na.rm = TRUE)
+m6 <- median(data$difficult_arithmetic_test_score, na.rm = TRUE)
+m7 <- sd(data$difficult_arithmetic_test_score, na.rm = TRUE)
+m8 <- IQR(data$difficult_arithmetic_test_score, na.rm = TRUE)
+
+# Calculating a 95% confidence interval for mean
+ci2 <- t.test(data$difficult_arithmetic_test_score, na.rm = TRUE)$conf.int
+
+# Recording the minimum/maximum values
+min_2 <- min(data$difficult_arithmetic_test_score, na.rm = TRUE)
+max_2 <- max(data$difficult_arithmetic_test_score, na.rm = TRUE)
+
+# Creating a summary table
+math_summary <- data.frame(Value = c(m5, m6, m7, m8, 
+                                     ci2[1], ci2[2], min_2, max_2))
+
+kable(
+  t(math_summary),
+  col.names = c("Mean", "Median", "SD", "IQR", "CI Lower", "CI Upper", 
+                "Min", "Max"),
+  caption = "Summary of Mental Arithmetic Test Scores",
+  align = "c",
+  booktabs = TRUE
+)
+```
+
+Summary of Caffeine Treatment Groups
+```{r appendix-summary-treatment-groups, echo=TRUE, eval = FALSE}
+# Calculating the distribution of three caffeine intake groups
+treatment_counts <- table(data$caffeine_intake_level)
+treatment_percent <- prop.table(treatment_counts) * 100
+
+# Creating a summary table
+treatment_summary <- rbind(
+  Count = round(as.numeric(treatment_counts), 1),
+  Percentage = round(as.numeric(treatment_percent), 1)
+)
+colnames(treatment_summary) <- names(treatment_counts)
+
+kable(treatment_summary, 
+      col.names = c("Decaffeinated", "Regular", "Espresso x2" ),
+      caption = "Table 3: Summary of Participants in Each Treatment Group")
+```
+
+Boxplot for Attention Test Scores
+```{r appendix-attention-boxplot, echo=TRUE, eval = FALSE}
+# Creating a boxplot
+ggplot(data, aes(
+  x = as.factor(caffeine_intake_level),
+  y = num_of_missed_in_attention_test,
+  fill = as.factor(caffeine_intake_level)
+)) +
+  geom_boxplot() +
+  scale_x_discrete(labels = c(
+    "0" = "Decaffeinated", 
+    "1" = "Regular",
+    "2" = "Espresso"
+  )) +
+  scale_fill_discrete(
+    name = "Caffeine Level",  
+    labels = c(
+      "0" = "Decaffeinated", 
+      "1" = "Regular Coffee",
+      "2" = "Espresso"
+    )
+  ) +
+  labs(
+    x = "Caffeine Intake Level",
+    y = "Number of Missed Letters in Attention Test",
+    caption = "Boxplot of Missed Letters in Attention Test by 
+    Caffeine Intake Level"
+  ) +
+  theme_minimal()
+```
+
+Boxplot for Mental Arithmetic Test Scores
+```{r appendix-mental-boxplot, echo=TRUE, eval = FALSE}
+# Creating a box plot
+ggplot(data, aes(
+  x = as.factor(caffeine_intake_level),
+  y = difficult_arithmetic_test_score,
+  fill = as.factor(caffeine_intake_level)
+)) +
+  geom_boxplot() +
+  scale_x_discrete(labels = c(
+    "0" = "Decaffeinated", 
+    "1" = "Regular Coffee",
+    "2" = "Espresso"
+  )) +
+  scale_fill_discrete(
+    name = "Caffeine Level",  
+    labels = c(
+      "0" = "Decaffeinated", 
+      "1" = "Regular Coffee",
+      "2" = "Espresso"
+    )
+  ) +
+  labs(
+    x = "Caffeine Intake Level",
+    y = "Mental Arithmetic Test Score",
+    caption = "Boxplot of Mental Arithmetic Test Score 
+    by Caffeine Intake Level"
+  ) +
+  theme_minimal()
+```
+
+Model Assumptions - QQ plot for Attention Test
+```{r appendix-model-assumptions-check-attention-test-qq-plot, echo=TRUE, eval = FALSE}
+# Checking the Attention Test Model Assumptions
+# Ensure caffeine intake level is a factor
+data$caffeine_intake_level <- as.factor(data$caffeine_intake_level)
+
+# Fit the ANOVA model for attention test
+model_att <- lm(num_of_missed_in_attention_test ~ caffeine_intake_level, 
+                data = data)
+
+# QQ Plot for normality check
+ggqqplot(residuals(model_att), main = "QQ Plot - Attention Test")
+```
+
+Shapiro-Wilk test for Attention Test
+```{r appendix-model-assumptions-check-attention-test-shapiro, echo=TRUE, eval = FALSE}
+# Run tests
+shapiro_test <- shapiro.test(residuals(model_att))
+
+# Create compact results display
+shapiro_results <- data.frame(
+  Statistic = formatC(shapiro_test$statistic, format = "f", digits = 3),
+  p.value = format.pval(shapiro_test$p.value, digits = 3)
+)
+knitr::kable(shapiro_results, align = 'c', caption = "Shapiro-Wilk Test")
+```
+
+Bartlett’s test for Attention Test
+```{r appendix-model-assumptions-check-attention-test-bartlett, echo=TRUE, eval = FALSE}
+# Run tests
+bartlett_test <- bartlett.test(num_of_missed_in_attention_test ~ 
+                                 caffeine_intake_level, data = data)
+
+# Create compact results display
+bartlett_results <- data.frame(
+  Statistic = formatC(bartlett_test$statistic, format = "f", digits = 3),
+  p.value = format.pval(bartlett_test$p.value, digits = 3)
+)
+
+knitr::kable(bartlett_results, align = 'c', caption = "Bartlett Test")
+```
+
+Kruskal-Wallis Test for Attention Test
+```{r appendix-Kruskal-Wallis-test-attention-test, echo=TRUE, eval = FALSE}
+# Convert caffeine intake level to words
+data$caffeine_intake_level <- factor(data$caffeine_intake_level, 
+                                     levels = c(0, 1, 2), 
+                                     labels = c("Decaffeinated", 
+                                                "Regular Coffee", "Espresso"))
+
+# Run Kruskal-Wallis test
+kw_test <- kruskal.test(num_of_missed_in_attention_test ~ 
+                          caffeine_intake_level, data = data)
+
+# Format Kruskal-Wallis results
+kw_df <- data.frame(
+  ChiSq = formatC(kw_test$statistic, digits = 3, format = "f"),
+  df = kw_test$parameter,
+  p.value = format.pval(kw_test$p.value, digits = 3)
+)
+
+knitr::kable(kw_df)
+```
+
+Pairwise t-test for Attention Test
+```{r pairwise-test-attention-test}
+# Run pairwise tests
+pairwise_results <- pairwise.t.test(data$num_of_missed_in_attention_test, 
+                                   data$caffeine_intake_level,
+                                   p.adjust.method = "bonferroni")
+
+# Format pairwise results
+pairwise_df <- as.data.frame(pairwise_results$p.value) |>
+  tibble::rownames_to_column("Group 1") |>
+  tidyr::pivot_longer(cols = -`Group 1`, 
+                      names_to = "Group 2", 
+                      values_to = "Adj. p-value") |>
+  dplyr::filter(!is.na(`Adj. p-value`)) |>
+  dplyr::mutate(`Adj. p-value` = format.pval(`Adj. p-value`, digits = 3))
+
+knitr::kable(pairwise_df)
+```
+
+Model Assumptions - QQ plot for Arithmetic Test
+```{r appendix-model-assumptions-arithmetic-test, echo=TRUE, eval = FALSE}
+# Checking the Mental Arithmetic Model Assumptions
+# Ensure caffeine intake level is a factor
+data$caffeine_intake_level <- as.factor(data$caffeine_intake_level)
+
+# Fit the ANOVA model for arithmetic test
+model_math <- lm(difficult_arithmetic_test_score ~ caffeine_intake_level, 
+                 data = data)
+
+# QQ Plot for normality check
+ggqqplot(residuals(model_math), main = "QQ Plot - Arithmetic Test")
+```
+
+Shapiro-Wilk Test for Arithmetic Test
+```{r model-assumptions-arithmetic-test-shapiro}
+# Run Shapiro test to test normality
+shapiro_test <- shapiro.test(residuals(model_math))
+
+# Create compact results display
+shapiro_results <- data.frame(
+  Statistic = formatC(shapiro_test$statistic, format = "f", digits = 3),
+  p.value = format.pval(shapiro_test$p.value, digits = 3)
+)
+
+knitr::kable(shapiro_results, align = 'c')
+```
+
+Kruskal-Wallis Test for Arithmetic Test
+```{r appendix-Kruskal-Wallis-test-arithmetic-test, echo=TRUE, eval = FALSE}
+# Run Kruskal-Wallis test to check if there are significant differences 
+kw_test <- kruskal.test(difficult_arithmetic_test_score ~ 
+                          caffeine_intake_level, data = data)
+
+# Create display
+kw_df <- data.frame(
+  ChiSq = formatC(kw_test$statistic, digits = 3, format = "f"),
+  df = kw_test$parameter,
+  p.value = format.pval(kw_test$p.value, digits = 3)
+)
+
+knitr::kable(kw_df, align = 'c')
+```

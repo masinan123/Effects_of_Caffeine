@@ -6,7 +6,7 @@ This GitHub repo contains all files for the paper *Analyzing the Effects of Caff
 
 The experiment was conducted using the simulation platform *The Island*, with 90 participants evenly assigned to each treatment group. Statistical analysis included summary statistics, visualizations, assumption checks, and non-parametric testing due to violations of ANOVA assumptions.
 
-The methodology and analytical strategies were informed by materials from STA305 at the UTM.
+The methodology and analytical strategies were informed by materials from STA305 at UTM.
 
 ## File Structure
 
